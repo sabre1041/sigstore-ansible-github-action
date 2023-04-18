@@ -26,10 +26,15 @@ import sys
 from glob import glob
 from pathlib import Path
 
+import requests
+
 _HERE = Path(__file__).parent.resolve()
 _TEMPLATES = _HERE / "templates"
 
-_SUMMARY = Path(os.getenv("GITHUB_STEP_SUMMARY")).open("a")
+_summary_path = os.getenv("GITHUB_STEP_SUMMARY")
+assert _summary_path is not None
+_SUMMARY = Path(_summary_path).open("a")
+
 _RENDER_SUMMARY = os.getenv("GHA_SIGSTORE_PYTHON_SUMMARY", "true") == "true"
 _DEBUG = os.getenv("GHA_SIGSTORE_PYTHON_INTERNAL_BE_CAREFUL_DEBUG", "false") != "false"
 
@@ -51,6 +56,22 @@ def _debug(msg):
 
 def _log(msg):
     print(msg, file=sys.stderr)
+
+
+def _download_ref_asset(ext):
+    repo = os.getenv("GITHUB_REPOSITORY")
+    ref = os.getenv("GITHUB_REF")
+
+    artifact = Path(f"/tmp/{os.getenv('GITHUB_REF_NAME')}.{ext}")
+
+    # GitHub supports /:org/:repo/archive/:ref<.tar.gz|.zip>.
+    r = requests.get(f"https://github.com/{repo}/archive/{ref}.{ext}", stream=True)
+    r.raise_for_status()
+    with artifact.open("wb") as io:
+        for chunk in r.iter_content(chunk_size=None):
+            io.write(chunk)
+
+    return str(artifact)
 
 
 def _sigstore_sign(global_args, sign_args):
@@ -99,49 +120,49 @@ if _DEBUG:
     sigstore_python_env["SIGSTORE_LOGLEVEL"] = "DEBUG"
 
 identity_token = os.getenv("GHA_SIGSTORE_PYTHON_IDENTITY_TOKEN")
-if identity_token != "":
+if identity_token:
     sigstore_sign_args.extend(["--identity-token", identity_token])
 
 client_id = os.getenv("GHA_SIGSTORE_PYTHON_OIDC_CLIENT_ID")
-if client_id != "":
+if client_id:
     sigstore_sign_args.extend(["--oidc-client-id", client_id])
 
 client_secret = os.getenv("GHA_SIGSTORE_PYTHON_OIDC_CLIENT_SECRET")
-if client_secret != "":
+if client_secret:
     sigstore_sign_args.extend(["--oidc-client-secret", client_secret])
 
 signature = os.getenv("GHA_SIGSTORE_PYTHON_SIGNATURE")
-if signature != "":
+if signature:
     sigstore_sign_args.extend(["--signature", signature])
     sigstore_verify_args.extend(["--signature", signature])
     signing_artifact_paths.append(signature)
 
 certificate = os.getenv("GHA_SIGSTORE_PYTHON_CERTIFICATE")
-if certificate != "":
+if certificate:
     sigstore_sign_args.extend(["--certificate", certificate])
     sigstore_verify_args.extend(["--certificate", certificate])
     signing_artifact_paths.append(certificate)
 
 bundle = os.getenv("GHA_SIGSTORE_PYTHON_BUNDLE")
-if bundle != "":
+if bundle:
     sigstore_sign_args.extend(["--bundle", bundle])
     sigstore_verify_args.extend(["--bundle", bundle])
     signing_artifact_paths.append(bundle)
 
 fulcio_url = os.getenv("GHA_SIGSTORE_PYTHON_FULCIO_URL")
-if fulcio_url != "":
+if fulcio_url:
     sigstore_sign_args.extend(["--fulcio-url", fulcio_url])
 
 rekor_url = os.getenv("GHA_SIGSTORE_PYTHON_REKOR_URL")
-if rekor_url != "":
+if rekor_url:
     sigstore_global_args.extend(["--rekor-url", rekor_url])
 
 ctfe = os.getenv("GHA_SIGSTORE_PYTHON_CTFE")
-if ctfe != "":
+if ctfe:
     sigstore_sign_args.extend(["--ctfe", ctfe])
 
 rekor_root_pubkey = os.getenv("GHA_SIGSTORE_PYTHON_REKOR_ROOT_PUBKEY")
-if rekor_root_pubkey != "":
+if rekor_root_pubkey:
     sigstore_global_args.extend(["--rekor-root-pubkey", rekor_root_pubkey])
 
 if os.getenv("GHA_SIGSTORE_PYTHON_STAGING", "false") != "false":
@@ -152,7 +173,7 @@ if enable_verify and not verify_cert_identity:
     _fatal_help("verify-cert-identity must be specified when verify is enabled")
 elif not enable_verify and verify_cert_identity:
     _fatal_help("verify-cert-identity cannot be specified without verify: true")
-else:
+elif verify_cert_identity:
     sigstore_verify_args.extend(["--cert-identity", verify_cert_identity])
 
 verify_oidc_issuer = os.getenv("GHA_SIGSTORE_PYTHON_VERIFY_OIDC_ISSUER")
@@ -160,9 +181,16 @@ if enable_verify and not verify_oidc_issuer:
     _fatal_help("verify-oidc-issuer must be specified when verify is enabled")
 elif not enable_verify and verify_oidc_issuer:
     _fatal_help("verify-oidc-issuer cannot be specified without verify: true")
-else:
+elif verify_oidc_issuer:
     sigstore_verify_args.extend(["--cert-oidc-issuer", verify_oidc_issuer])
 
+if os.getenv("GHA_SIGSTORE_PYTHON_RELEASE_SIGNING_ARTIFACTS") == "true":
+    for filetype in ["zip", "tar.gz"]:
+        artifact = _download_ref_asset(filetype)
+        if artifact is not None:
+            inputs.append(artifact)
+
+bundle_only = os.getenv("GHA_SIGSTORE_PYTHON_BUNDLE_ONLY") == "true"
 for input_ in inputs:
     # Forbid things that look like flags. This isn't a security boundary; just
     # a way to prevent (less motivated) users from breaking the action on themselves.
@@ -174,15 +202,19 @@ for input_ in inputs:
     for file_ in files:
         if not file_.is_file():
             _fatal_help(f"input {file_} does not look like a file")
-        if "--certificate" not in sigstore_sign_args:
+
+        # Also upload artifact being signed for.
+        signing_artifact_paths.append(str(file_))
+
+        if not bundle_only and "--certificate" not in sigstore_sign_args:
             signing_artifact_paths.append(f"{file_}.crt")
-        if "--signature" not in sigstore_sign_args:
+        if not bundle_only and "--signature" not in sigstore_sign_args:
             signing_artifact_paths.append(f"{file_}.sig")
         if "--bundle" not in sigstore_sign_args:
             signing_artifact_paths.append(f"{file_}.sigstore")
 
-    sigstore_sign_args.extend(files)
-    sigstore_verify_args.extend(files)
+    sigstore_sign_args.extend([str(f) for f in files])
+    sigstore_verify_args.extend([str(f) for f in files])
 
 _debug(f"signing: sigstore-python {[str(a) for a in sigstore_sign_args]}")
 
@@ -238,19 +270,21 @@ if sign_status.returncode != 0:
     assert verify_status is None
     sys.exit(sign_status.returncode)
 
-# Now populate the `GHA_SIGSTORE_PYTHON_SIGNING_ARTIFACTS` environment variable
-# so that later steps know which files to upload as workflow artifacts.
+# Now populate the `GHA_SIGSTORE_PYTHON_INTERNAL_SIGNING_ARTIFACTS` environment
+# variable so that later steps know which files to upload as workflow artifacts.
 #
 # In GitHub Actions, environment variables can be made to persist across
 # workflow steps by appending to the file at `GITHUB_ENV`.
-with Path(os.getenv("GITHUB_ENV")).open("a") as gh_env:
+_github_env = os.getenv("GITHUB_ENV")
+assert _github_env is not None
+with Path(_github_env).open("a") as gh_env:
     # Multiline values must match the following syntax:
     #
     # {name}<<{delimiter}
     # {value}
     # {delimiter}
     gh_env.write(
-        "GHA_SIGSTORE_PYTHON_SIGNING_ARTIFACTS<<EOF"
+        "GHA_SIGSTORE_PYTHON_INTERNAL_SIGNING_ARTIFACTS<<EOF"
         + os.linesep
         + os.linesep.join(signing_artifact_paths)
         + os.linesep
