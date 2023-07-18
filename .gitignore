@@ -127,7 +127,3 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
-
-# ansible-sign
-MANIFEST.in
-*/.ansible-sign/*
