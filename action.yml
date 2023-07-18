@@ -16,10 +16,10 @@ name: "gh-action-sigstore-python"
 author: "Sigstore Authors <sigstore-dev@googlegroups.com>"
 description: "Use sigstore-python to sign Python packages"
 inputs:
-  inputs:
-    description: "the files to sign, whitespace separated"
+  project_path:
+    description: "the path of the project to sign or verify"
     required: true
-    default: ""
+    default: "."
   identity-token:
     description: "the OIDC identity token to use"
     required: false
@@ -30,18 +30,6 @@ inputs:
     default: ""
   oidc-client-secret:
     description: "the custom OpenID Connect client secret to use during OAuth2"
-    required: false
-    default: ""
-  signature:
-    description: "write a single signature to the given file; does not work with multiple input files"
-    required: false
-    default: ""
-  certificate:
-    description: "write a single certificate to the given file; does not work with multiple input files"
-    required: false
-    default: ""
-  bundle:
-    description: "write a single Sigstore bundle to the given file; does not work with multiple input files"
     required: false
     default: ""
   fulcio-url:
@@ -82,14 +70,6 @@ inputs:
       required if `verify` is enabled; has no effect otherwise.
     required: false
     default: ""
-  upload-signing-artifacts:
-    description: "upload all signing artifacts as workflow artifacts"
-    required: false
-    default: false
-  release-signing-artifacts:
-    description: "attach all signing artifacts as release assets"
-    required: false
-    default: false
   internal-be-careful-debug:
     description: "run with debug logs (default false)"
     required: false
@@ -104,15 +84,12 @@ runs:
         source "${{ github.action_path }}/setup/setup.bash"
       shell: bash
 
-    - name: Run sigstore-python
-      id: sigstore-python
+    - name: Run ansible-sign
+      id: ansible-sign
       run: |
-        ${{ github.action_path }}/action.py "${{ inputs.inputs }}"
+        ${{ github.action_path }}/action.py "${{ inputs.project_path }}"
       env:
         GHA_SIGSTORE_PYTHON_IDENTITY_TOKEN: "${{ inputs.identity-token }}"
-        GHA_SIGSTORE_PYTHON_SIGNATURE: "${{ inputs.signature }}"
-        GHA_SIGSTORE_PYTHON_CERTIFICATE: "${{ inputs.certificate }}"
-        GHA_SIGSTORE_PYTHON_BUNDLE: "${{ inputs.bundle }}"
         GHA_SIGSTORE_PYTHON_OIDC_CLIENT_ID: "${{ inputs.oidc-client-id }}"
         GHA_SIGSTORE_PYTHON_OIDC_CLIENT_SECRET: "${{ inputs.oidc-client-secret }}"
         GHA_SIGSTORE_PYTHON_FULCIO_URL: "${{ inputs.fulcio-url }}"
@@ -123,17 +100,5 @@ runs:
         GHA_SIGSTORE_PYTHON_VERIFY: "${{ inputs.verify }}"
         GHA_SIGSTORE_PYTHON_VERIFY_CERT_IDENTITY: "${{ inputs.verify-cert-identity }}"
         GHA_SIGSTORE_PYTHON_VERIFY_OIDC_ISSUER: "${{ inputs.verify-oidc-issuer }}"
-        GHA_SIGSTORE_PYTHON_RELEASE_SIGNING_ARTIFACTS: "${{ inputs.release-signing-artifacts }}"
         GHA_SIGSTORE_PYTHON_INTERNAL_BE_CAREFUL_DEBUG: "${{ inputs.internal-be-careful-debug }}"
       shell: bash
-
-    - uses: actions/upload-artifact@v3
-      if: inputs.upload-signing-artifacts == 'true'
-      with:
-        name: "signing-artifacts-${{ github.job }}"
-        path: "${{ env.GHA_SIGSTORE_PYTHON_INTERNAL_SIGNING_ARTIFACTS }}"
-
-    - uses: softprops/action-gh-release@v1
-      if: inputs.release-signing-artifacts == 'true' && github.event_name == 'release' && github.event.action == 'published'
-      with:
-        files: "${{ env.GHA_SIGSTORE_PYTHON_INTERNAL_SIGNING_ARTIFACTS }}"

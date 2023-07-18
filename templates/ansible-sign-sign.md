@@ -1,7 +1,7 @@
 <details>
 
 <summary>
-  Raw <code>sigstore-python sign</code> output
+  Raw <code>ansible-sign project sigstore-sign</code> output
 </summary>
 
 ```
