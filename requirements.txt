@@ -1,2 +1,1 @@
-sigstore ~= 1.1.2
-requests ~= 2.28
+-e git+https://github.com/mayaCostantini/ansible-sign.git@main#egg=ansible-sign
