@@ -23,7 +23,6 @@ import os
 import string
 import subprocess
 import sys
-from glob import glob
 from pathlib import Path
 
 import requests
@@ -88,8 +87,7 @@ def _ansible_verify_sigstore(global_args, verify_args):
         "python",
         "-m",
         "ansible-sign",
-        "project"
-        "sigstore-verify",
+        "project" "sigstore-verify",
         "identity",
         *verify_args,
     ]
@@ -104,9 +102,10 @@ def _fatal_help(msg):
     sys.exit(1)
 
 
-project_path = sys.argv[1].split()
+project_path = sys.argv[1]
 
-# The arguments we pass into `ansible-sign project sigstore-*` subcommands get built up in these lists.
+# The arguments we pass into `ansible-sign project sigstore-*`
+# subcommands get built up in these lists.
 sigstore_global_args = []
 sigstore_sign_args = []
 sigstore_verify_args = []
@@ -166,9 +165,9 @@ elif not enable_verify and verify_oidc_issuer:
     _fatal_help("verify-oidc-issuer cannot be specified without verify: true")
 elif verify_oidc_issuer:
     sigstore_verify_args.extend(["--cert-oidc-issuer", verify_oidc_issuer])
-    sigstore_verify_args.extend([project_path])
+    sigstore_verify_args.append(project_path)
 
-sigstore_sign_args.extend(project_path)
+sigstore_sign_args.append(project_path)
 
 _debug(f"signing: ansible-sign {[str(a) for a in sigstore_sign_args]}")
 
@@ -216,9 +215,7 @@ _summary(_template("ansible-sign-sign").substitute(output=sign_status.stdout))
 
 if verify_status is not None:
     _log(verify_status.stdout)
-    _summary(
-        _template("ansible-sign-verify").substitute(output=verify_status.stdout)
-    )
+    _summary(_template("ansible-sign-verify").substitute(output=verify_status.stdout))
 
 if sign_status.returncode != 0:
     assert verify_status is None
