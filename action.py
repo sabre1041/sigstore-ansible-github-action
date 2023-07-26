@@ -57,27 +57,6 @@ def _log(msg):
     print(msg, file=sys.stderr)
 
 
-def _download_ref_asset(ext):
-    repo = os.getenv("GITHUB_REPOSITORY")
-    ref = os.getenv("GITHUB_REF")
-
-    # NOTE: Branch names often have `/` in them (e.g. `feat/some-name`),
-    # which would break the artifact path we construct below.
-    # We "fix" these by lossily replacing all `/` with `-`.
-    ref_name_normalized = os.getenv("GITHUB_REF_NAME").replace("/", "-")
-
-    artifact = Path(f"/tmp/{ref_name_normalized}.{ext}")
-
-    # GitHub supports /:org/:repo/archive/:ref<.tar.gz|.zip>.
-    r = requests.get(f"https://github.com/{repo}/archive/{ref}.{ext}", stream=True)
-    r.raise_for_status()
-    with artifact.open("wb") as io:
-        for chunk in r.iter_content(chunk_size=None):
-            io.write(chunk)
-
-    return str(artifact)
-
-
 def _ansible_sign_sigstore(global_args, sign_args):
     return ["python", "-m", "ansible-sign", "project", "sigstore-sign", *sign_args]
 
