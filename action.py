@@ -25,7 +25,6 @@ import subprocess
 import sys
 from pathlib import Path
 
-import requests
 
 _HERE = Path(__file__).parent.resolve()
 _TEMPLATES = _HERE / "templates"

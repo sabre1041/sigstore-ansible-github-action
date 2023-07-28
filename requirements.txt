@@ -1,1 +1,1 @@
--e git+https://github.com/mayaCostantini/ansible-sign.git@main#egg=ansible-sign
+-e git+https://github.com/ansible-sigstore-tools/ansible-sign.git@main#egg=ansible-sign

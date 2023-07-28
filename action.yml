@@ -1,4 +1,5 @@
 # Copyright 2022 The Sigstore Authors
+# Copyright 2023 Maya Costantini <mcostant@redhat.com>
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,9 +13,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-name: "gh-action-sigstore-python"
+name: "sigstore-ansible-github-action"
 author: "Sigstore Authors <sigstore-dev@googlegroups.com>"
-description: "Use sigstore-python to sign Python packages"
+description: "Use ansible-sign to sign Ansible projects with Sigstore"
 inputs:
   project_path:
     description: "the path of the project to sign or verify"
@@ -78,7 +79,7 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - name: Set up sigstore-python
+    - name: Set up ansible-sign
       run: |
         # NOTE: Sourced, not executed as a script.
         source "${{ github.action_path }}/setup/setup.bash"
