@@ -83,7 +83,8 @@ project_path = sys.argv[1]
 # The arguments we pass into `ansible-sign project sigstore-*`
 # subcommands get built up in these lists.
 sigstore_global_args = []
-sigstore_sign_args = []
+# Signatures are systematically overwritten
+sigstore_sign_args = ["--overwrite"]
 sigstore_verify_args = []
 
 # The environment variables that we apply to `ansible-sign project sigstore-*.
