@@ -95,12 +95,12 @@ jobs:
       - uses: actions/download-artifact@v3
         with:
           name: "signing-artifacts-${{ github.job }}"
-          path: ./test/uploaded
+          path: ./test/
       - name: Verify presence of uploaded files
         run: |
-          [[ -f ./artifact.txt ]] || exit 1
-          [[ -f ./.ansible-sign/artifact.txt.sigstore ]] || exit 1
-        working-directory: ./test/uploaded
+          [[ -f ./.ansible-sign/sha256sum.txt ]] || exit 1
+          [[ -f ./.ansible-sign/sha256sum.txt.sigstore ]] || exit 1
+        working-directory: ./test/
 
   selftest-verify:
     runs-on: ubuntu-latest
