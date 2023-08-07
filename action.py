@@ -57,12 +57,12 @@ def _log(msg):
 
 
 def _ansible_sign_sigstore(global_args, sign_args):
-    return ["python", "-m", "ansible-sign", "project", "sigstore-sign", *sign_args]
+    return ["/usr/bin/python", "-m", "ansible-sign", "project", "sigstore-sign", *sign_args]
 
 
 def _ansible_verify_sigstore(global_args, verify_args):
     return [
-        "python",
+        "/usr/bin/python",
         "-m",
         "ansible-sign",
         "project" "sigstore-verify",
