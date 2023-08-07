@@ -36,11 +36,5 @@ min_vers=$(cut -d '.' -f2 <<< "${vers}")
 
 [[ "${maj_vers}" == "3" && "${min_vers}" -ge 7 ]] || die "Bad Python version: ${vers}"
 
-# Debug
-echo $PATH
 
-/usr/bin/python -m pip install --force-reinstall --requirement "${GITHUB_ACTION_PATH}/requirements.txt"
-
-# Test
-/usr/bin/python -m sigstore --help
-/usr/bin/python -m ansible-sign --help || python3 -m ansible-sign --help || /usr/local/bin/python3 -m ansible-sign --help || python -m ansible-sign --help || ansible-sign --help
+python -m pip install --force-reinstall --requirement "${GITHUB_ACTION_PATH}/requirements.txt"
