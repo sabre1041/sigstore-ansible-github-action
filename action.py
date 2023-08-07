@@ -63,7 +63,8 @@ def _ansible_sign_sigstore(global_args, sign_args):
 def _ansible_verify_sigstore(global_args, verify_args):
     return [
         "ansible-sign",
-        "project" "sigstore-verify",
+        "project",
+        "sigstore-verify",
         "identity",
         *verify_args,
     ]
