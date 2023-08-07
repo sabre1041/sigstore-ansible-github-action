@@ -89,18 +89,18 @@ jobs:
         uses: ./
         id: ansible-sign
         with:
-          project_path: ./test/
+          inputs: ./test/.ansible-sign/sha256sum.txt
           staging: true
           upload-signing-artifacts: true
       - uses: actions/download-artifact@v3
         with:
           name: "signing-artifacts-${{ github.job }}"
-          path: ./test/
+          path: ./test/uploaded
       - name: Verify presence of uploaded files
         run: |
           [[ -f ./.ansible-sign/sha256sum.txt ]] || exit 1
           [[ -f ./.ansible-sign/sha256sum.txt.sigstore ]] || exit 1
-        working-directory: ./test/
+        working-directory: ./test/uploaded
 
   selftest-verify:
     runs-on: ubuntu-latest
