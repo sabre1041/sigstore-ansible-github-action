@@ -1,1 +1,2 @@
--e git+https://github.com/ansible-sigstore-tools/ansible-sign.git@main#egg=ansible-sign
+--extra-index-url https://test.pypi.org/simple/
+ansible-sign-unofficial-do-not-use
