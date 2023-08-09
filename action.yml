@@ -119,4 +119,5 @@ runs:
       run: |
         [[ -f ./.ansible-sign/sha256sum.txt ]] || exit 1
         [[ -f ./.ansible-sign/sha256sum.txt.sigstore ]] || exit 1
+      shell: bash
       working-directory: ${{ inputs.project_path }}
