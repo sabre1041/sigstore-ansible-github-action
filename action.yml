@@ -123,13 +123,4 @@ runs:
       working-directory: ${{ inputs.project_path }}
 
     - name: Commit changes
-      run: |
-        git config --global user.email "no-reply@github.com"
-        git config --global user.name "GitHub Actions"
-        git pull
-        git add ${{ inputs.project_path }}
-        date=$(date)
-        git commit -m "Sign project with ${{ github.job }} at ${date}"
-        git remote set-url origin https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}
-        git push
-      shell: bash
+      uses: stefanzweifel/git-auto-commit-action@v4
