@@ -38,7 +38,8 @@ jobs:
       - uses: mayaCostantini/sigstore-ansible-github-action@v0.0.1
 ```
 
-Note: Your workflow **must** have permission to request the OIDC token to authenticate with.
+Note: Your workflow **must** have permission to request the OIDC token to authenticate with,
+and the `contents: write` permission for the Action to commit signature artifacts in the repository.
 This can be done by setting `id-token: write` on your job (as above) or workflow.
 
 More information about permission settings can be found
