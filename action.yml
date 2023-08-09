@@ -121,3 +121,13 @@ runs:
         [[ -f ./.ansible-sign/sha256sum.txt.sigstore ]] || exit 1
       shell: bash
       working-directory: ${{ inputs.project_path }}
+
+    - name: Commit changes
+      run: |
+        git config --global user.email "no-reply@github.com"
+        git config --global user.name "GitHub Actions"
+        git add ${{ inputs.project_path }}
+        date=$(date)
+        git commit -m "Sign project with ${{ github.job }} at ${date}"
+        git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
+        git push
