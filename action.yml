@@ -130,5 +130,6 @@ runs:
         date=$(date)
         git commit -m "Sign project with ${{ github.job }} at ${date}"
         git remote set-url origin https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}
+        git pull
         git push
       shell: bash
