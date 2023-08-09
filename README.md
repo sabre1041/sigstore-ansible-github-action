@@ -1,27 +1,32 @@
-gh-action-sigstore-python
+Ansible-sign GitHub Action
 =========================
+
+⚠️ This project is a work in progress and is not ready for production use.
 
 [![CI](https://github.com/sigstore/gh-action-sigstore-python/actions/workflows/ci.yml/badge.svg)](https://github.com/sigstore/gh-action-sigstore-python/actions/workflows/ci.yml)
 [![Self-test](https://github.com/sigstore/gh-action-sigstore-python/actions/workflows/selftest.yml/badge.svg)](https://github.com/sigstore/gh-action-sigstore-python/actions/workflows/selftest.yml)
 
-A GitHub Action that uses [`sigstore-python`](https://github.com/sigstore/sigstore-python)
-to generate Sigstore signatures.
+A GitHub Action that uses [`ansible-sign`](https://github.com/ansible/ansible-sign) to generate Sigstore signatures for Ansible projects.
+This repository is a fork of [`gh-action-sigstore-python`](https://github.com/sigstore/gh-action-sigstore-python), which uses [`sigstore-python`](https://github.com/sigstore/sigstore-python) to sign repository artifacts. For more information on project Sigstore, see the official [website](https://sigstore.dev/) and [documentation](https://docs.sigstore.dev/).
+
+As an Ansible project developer, you can use this GitHub Action to automatically sign your project on a new commit or release.
+The `ansible-sign` verification materials for the project is generated under a new `.ansible-sign` directory and contains:
+
 
 ## Index
 
 * [Usage](#usage)
 * [Configuration](#configuration)
   * [⚠️ Internal options ⚠️](#internal-options)
-* [Licensing](#licensing)
-* [Code of Conduct](#code-of-conduct)
+* [Info](#info)
 
 ## Usage
 
-Simply add `sigstore/gh-action-sigstore-python` to one of your workflows:
+Add `mayaCostantini/sigstore-ansible-github-action` to one of your workflows:
 
 ```yaml
 jobs:
-  selftest:
+  sign-project:
     runs-on: ubuntu-latest
     permissions:
       id-token: write
@@ -29,9 +34,7 @@ jobs:
       - uses: actions/checkout@v3
       - name: install
         run: python -m pip install .
-      - uses: sigstore/gh-action-sigstore-python@v1.2.3
-        with:
-          inputs: file.txt
+      - uses: mayaCostantini/sigstore-ansible-github-action@v0.0.1
 ```
 
 Note: Your workflow **must** have permission to request the OIDC token to authenticate with.
@@ -45,25 +48,17 @@ More information about permission settings can be found
 `gh-action-sigstore-python` takes a variety of configuration inputs, most of which are
 optional.
 
-### `inputs`
+### `project-path`
 
-The `inputs` setting controls what files `sigstore-python` signs. At least one input must be
-provided.
+The `project-path` input is optional and defaults to the root of the current repository.
 
-To sign one or more files:
-
-```yaml
-- uses: sigstore/gh-action-sigstore-python@v1.2.3
-  with:
-    inputs: file0.txt file1.txt file2.txt
-```
-
-The `inputs` argument also supports file globbing:
+Sign a repository sub-path:
 
 ```yaml
 - uses: sigstore/gh-action-sigstore-python@v1.2.3
   with:
-    inputs: ./path/to/inputs/*.txt
+    inputs:
+      project-path: ./somesubpath/
 ```
 
 ### `identity-token`
@@ -110,81 +105,6 @@ Example:
   with:
     inputs: file.txt
     oidc-client-secret: alternative-sigstore-secret
-```
-
-### `signature`
-
-**Default**: Empty (signature files will get named as `{input}.sig`)
-
-The `signature` setting controls the name of the output signature file. This setting does not work
-when signing multiple input files.
-
-Example:
-
-```yaml
-- uses: sigstore/gh-action-sigstore-python@v1.2.3
-  with:
-    inputs: file.txt
-    signature: custom-signature-filename.sig
-```
-
-However, this example is invalid:
-
-```yaml
-- uses: sigstore/gh-action-sigstore-python@v1.2.3
-  with:
-    inputs: file0.txt file1.txt file2.txt
-    signature: custom-signature-filename.sig
-```
-
-### `certificate`
-
-**Default**: Empty (certificate files will get named as `{input}.crt`)
-
-The `certificate` setting controls the name of the output certificate file. This setting does not
-work when signing multiple input files.
-
-Example:
-
-```yaml
-- uses: sigstore/gh-action-sigstore-python@v1.2.3
-  with:
-    inputs: file.txt
-    certificate: custom-certificate-filename.crt
-```
-
-However, this example is invalid:
-
-```yaml
-- uses: sigstore/gh-action-sigstore-python@v1.2.3
-  with:
-    inputs: file0.txt file1.txt file2.txt
-    certificate: custom-certificate-filename.crt
-```
-
-### `bundle`
-
-**Default**: Empty (bundle files will get named as `{input}.sigstore`)
-
-The `bundle` setting controls the name of the output Sigstore bundle. This setting does not work
-when signing multiple input files.
-
-Example:
-
-```yaml
-- uses: sigstore/gh-action-sigstore-python@v1.2.3
-  with:
-    inputs: file.txt
-    bundle: custom-bundle.sigstore
-```
-
-However, this example is invalid:
-
-```yaml
-- uses: sigstore/gh-action-sigstore-python@v1.2.3
-  with:
-    inputs: file0.txt file1.txt file2.txt
-    certificate: custom-bundle.sigstore
 ```
 
 ### `fulcio-url`
@@ -272,7 +192,7 @@ Example:
 **Default**: `false`
 
 The `verify` setting controls whether or not the generated signatures and certificates are
-verified with the `sigstore verify` subcommand after all files have been signed.
+verified with the `ansible-sign project sigstore-verify` subcommand after the project has been signed.
 
 This is **not strictly necessary** but can act as a smoke test to ensure that all
 signing artifacts were generated properly and the signature was properly
@@ -284,9 +204,8 @@ and `verify-oidc-issuer` settings. Failing to pass these will produce an error.
 Example:
 
 ```yaml
-- uses: sigstore/gh-action-sigstore-python@v1.2.3
+- uses: mayaCostantini/sigstore-ansible-github-action@v0.0.1
   with:
-    inputs: file.txt
     verify: true
     verify-oidc-issuer: https://some-oidc-issuer.example.com
     verify-cert-identity: some-identity
@@ -297,7 +216,7 @@ Example:
 **Default**: Empty
 
 The `verify-cert-identity` setting controls whether to verify the Subject Alternative Name (SAN) of the
-signing certificate after signing has taken place. If it is set, `sigstore-python` will compare the
+signing certificate after signing has taken place. If it is set, `ansible-sign` will compare the
 certificate's SAN against the provided value.
 
 This setting only applies if `verify` is set to `true`. Supplying it without `verify: true`
@@ -307,9 +226,8 @@ This setting may only be used in conjunction with `verify-oidc-issuer`.
 Supplying it without `verify-oidc-issuer` will produce an error.
 
 ```yaml
-- uses: sigstore/gh-action-sigstore-python@v1.2.3
+- uses: mayaCostantini/sigstore-ansible-github-action@v0.0.1
   with:
-    inputs: file.txt
     verify: true
     verify-cert-identity: john.hancock@example.com
     verify-oidc-issuer: https://oauth2.sigstage.dev/auth
@@ -320,7 +238,7 @@ Supplying it without `verify-oidc-issuer` will produce an error.
 **Default**: `https://oauth2.sigstore.dev/auth`
 
 The `verify-oidc-issuer` setting controls whether to verify the issuer extension of the signing
-certificate after signing has taken place. If it is set, `sigstore-python` will compare the
+certificate after signing has taken place. If it is set, `ansible-sign` will compare the
 certificate's issuer extension against the provided value.
 
 This setting only applies if `verify` is set to `true`. Supplying it without `verify: true`
@@ -332,60 +250,11 @@ Supplying it without `verify-cert-identity` will produce an error.
 Example:
 
 ```yaml
-- uses: sigstore/gh-action-sigstore-python@v1.2.3
+- uses: mayaCostantini/sigstore-ansible-github-action@v0.0.1
   with:
-    inputs: file.txt
     verify: true
     verify-cert-identity: john.hancock@example.com
     verify-oidc-issuer: https://oauth2.sigstage.dev/auth
-```
-
-### `upload-signing-artifacts`
-
-**Default**: `false`
-
-The `upload-signing-artifacts` setting controls whether or not `sigstore-python` creates
-[workflow artifacts](https://docs.github.com/en/actions/using-workflows/storing-workflow-data-as-artifacts)
-for the outputs produced by signing operations.
-
-By default, no workflow artifacts are uploaded. When enabled, the default
-workflow artifact retention period is used.
-
-Example:
-
-```yaml
-- uses: sigstore/gh-action-sigstore-python@v1.2.3
-  with:
-    inputs: file.txt
-    upload-signing-artifacts: true
-```
-
-### `release-signing-artifacts`
-
-**Default**: `false`
-
-The `release-signing-artifacts` setting controls whether or not `sigstore-python`
-uploads signing artifacts to the release publishing event that triggered this run.
-
-If enabled, this setting also re-uploads and signs GitHub's default source code artifacts,
-as they are not guaranteed to be stable.
-
-By default, no release assets are uploaded.
-
-Requires the [`contents: write` permission](https://docs.github.com/en/actions/security-guides/automatic-token-authentication#permissions-for-the-github_token).
-
-Example:
-
-```yaml
-permissions:
-  contents: write
-
-# ...
-
-- uses: sigstore/gh-action-sigstore-python@v1.2.3
-  with:
-    inputs: file.txt
-    release-signing-artifacts: true
 ```
 
 ### Internal options
@@ -403,37 +272,21 @@ permissions:
   **Default**: `false`
 
   The `internal-be-careful-debug` setting enables additional debug logs,
-  both within `sigstore-python` itself and the action's harness code. You can
+  both within `ansible-sign` itself and the action's harness code. You can
   use it to debug troublesome configurations.
 
   Example:
 
   ```yaml
-  - uses: sigstore/gh-action-sigstore-python@v1.2.3
+  - uses: mayaCostantini/sigstore-ansible-github-action@v0.0.1
     with:
-      inputs: file.txt
       internal-be-careful-debug: true
   ```
 
 </details>
 
-## Licensing
-
-`gh-action-sigstore-python` is licensed under the Apache 2.0 License.
-
-## Code of Conduct
-
-Everyone interacting with this project is expected to follow the
-[sigstore Code of Conduct](https://github.com/sigstore/.github/blob/main/CODE_OF_CONDUCT.md)
-
-## Security
-
-Should you discover any security issues, please refer to sigstore's [security
-process](https://github.com/sigstore/.github/blob/main/SECURITY.md).
-
 ## Info
 
-`gh-action-sigstore-python` is developed as part of the [`sigstore`](https://sigstore.dev) project.
+For bug reports, feature requests or enhancement proposals, open an issue in the [`sigstore-ansible-github-action`](https://github.com/mayaCostantini/sigstore-ansible-github-action/issues) repository.
 
-We also use a [slack channel](https://sigstore.slack.com)!
-Click [here](https://join.slack.com/t/sigstore/shared_invite/zt-mhs55zh0-XmY3bcfWn4XEyMqUUutbUQ) for the invite link.
+Contact: [mcostant@redhat.com](mcostant@redhat.com).
