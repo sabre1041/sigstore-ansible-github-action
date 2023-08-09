@@ -114,6 +114,7 @@ runs:
       uses: actions/download-artifact@v3
       with:
         name: ansible-sign-artifacts-${{ github.job }}
+        path: ${{ inputs.project_path }}/.ansible-sign/
 
     - name: Verify signature artifacts are present in the project
       run: |
