@@ -103,3 +103,20 @@ runs:
         GHA_SIGSTORE_PYTHON_VERIFY_OIDC_ISSUER: "${{ inputs.verify-oidc-issuer }}"
         GHA_SIGSTORE_PYTHON_INTERNAL_BE_CAREFUL_DEBUG: "${{ inputs.internal-be-careful-debug }}"
       shell: bash
+
+    - name: Upload signature artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: ansible-sign-artifacts-${{ github.job }}
+        path: .ansible-sign/*
+
+    - name: Download signature artifacts
+      uses: actions/download-artifacts@v3
+      with:
+        name: ansible-sign-artifacts-${{ github.job }}
+
+    - name: Verify signature artifacts are present in the project
+      run: |
+        [[ -f ./.ansible-sign/sha256sum.txt ]] || exit 1
+        [[ -f ./.ansible-sign/sha256sum.txt.sigstore ]] || exit 1
+      working-directory: ${{ inputs.project_path }}
