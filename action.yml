@@ -111,7 +111,7 @@ runs:
         path: .ansible-sign/*
 
     - name: Download signature artifacts
-      uses: actions/download-artifacts@v3
+      uses: actions/download-artifact@v3
       with:
         name: ansible-sign-artifacts-${{ github.job }}
 
