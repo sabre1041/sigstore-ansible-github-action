@@ -123,5 +123,10 @@ runs:
       shell: bash
       working-directory: ${{ inputs.project_path }}
 
+    # See: https://github.com/stefanzweifel/git-auto-commit-action/issues/229#issuecomment-1177711418
+    - name: Pull Remote Changes
+      run: git pull
+      shell: bash
+
     - name: Commit changes
       uses: stefanzweifel/git-auto-commit-action@v4
