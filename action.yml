@@ -108,7 +108,7 @@ runs:
       uses: actions/upload-artifact@v3
       with:
         name: ansible-sign-artifacts-${{ github.job }}
-        path: .ansible-sign/*
+        path: ${{ inputs.project_path }}/.ansible-sign/*
 
     - name: Download signature artifacts
       uses: actions/download-artifact@v3
