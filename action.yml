@@ -123,14 +123,14 @@ runs:
       shell: bash
       working-directory: ${{ inputs.project_path }}
 
-    # See: https://github.com/stefanzweifel/git-auto-commit-action/issues/229#issuecomment-1177711418
-    - name: Pull Remote Changes
-      run: git pull
-      shell: bash
-
     - name: Get current date
       id: get-date
       run: echo "::set-output name=date::$(date +'%Y-%m-%d')"
+      shell: bash
+
+    # See: https://github.com/stefanzweifel/git-auto-commit-action/issues/229#issuecomment-1177711418
+    - name: Pull Remote Changes
+      run: git pull
       shell: bash
 
     - name: Commit changes
