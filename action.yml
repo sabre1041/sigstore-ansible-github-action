@@ -75,11 +75,15 @@ inputs:
     description: "run with debug logs (default false)"
     required: false
     default: false
-
+  install-ansible-sign:
+    description: "installs ansible-sign CLI"
+    required: false
+    default: 'true'
 runs:
   using: "composite"
   steps:
     - name: Set up ansible-sign
+      if: ${{ inputs.install-ansible-sign != 'false' }}
       run: |
         # NOTE: Sourced, not executed as a script.
         source "${{ github.action_path }}/setup/setup.bash"
